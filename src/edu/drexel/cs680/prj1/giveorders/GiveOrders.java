@@ -20,16 +20,8 @@ public class GiveOrders {
 		this.bwapi = bwapi;
 	}
 	
-	
-
-	// TODO remove this
-	public static void morphDrone(int id, int ordinal) {
-		instance.bwapi.morph(id, ordinal);
-		AgentState.morphedDrone = true;
-	}
-
 	public void sendOrders() {
-		if (Strategy.instance.currentState == Strategy.States.Attack) {
+		if (Strategy.instance.currentState.equals(Strategy.States.Attack)) {
 			attackEnemy();
 		} else if (Strategy.instance.currentState == Strategy.States.Defend) {
 			defend();
@@ -75,8 +67,9 @@ public class GiveOrders {
 		if(Perception.instance.totalMinerals < 100)			// this is from the Strategy "enoughResourcesAvailable" method
 			gatherMinerals();
 
-		if(Perception.instance.buildingExtractor < 1)
-			buildExtractor();
+		//TODO move logic to Strategy
+//		if(Perception.instance.buildingExtractor < 1)
+//			buildExtractor();
 		
 		if(Perception.instance.totalGas< 100)
 			gatherGas();
@@ -89,10 +82,11 @@ public class GiveOrders {
 	}
 
 	private void attackEnemy() {
-		List<Unit> allEnemyUnits = Perception.instance.allEnemyUnits();
+		List<Unit> allEnemyUnits = Perception.instance.allVisibleEnemyUnits();
 		List<Unit> allIdleZerglings = Perception.instance.listOfUnitsIdleByType
 				.get(UnitTypes.Zerg_Zergling);
 
+		System.out.println(String.format("Enemy/Player:%d/%d", allEnemyUnits.size(), allIdleZerglings.size()));
 		ExecuteOrders.instance.moveCloseToEnemy(allIdleZerglings, allEnemyUnits);
 		attack(allIdleZerglings, allEnemyUnits);
 	}
@@ -100,6 +94,7 @@ public class GiveOrders {
 	private void attack(List<Unit> allIdleZerglings, List<Unit> allEnemyUnits) {
 		for (Unit unit : allIdleZerglings) {
 			for (Unit enemy : allEnemyUnits) {
+				System.out.println(String.format("Attack Enemy Unit#>>>%d<<<", unit.getID()));
 				bwapi.attack(unit.getID(), enemy.getX(), enemy.getY());
 				break;
 			}
