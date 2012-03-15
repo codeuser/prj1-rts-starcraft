@@ -6,6 +6,7 @@ import java.util.Set;
 import edu.drexel.cs680.prj1.giveorders.GiveOrders;
 import edu.drexel.cs680.prj1.perception.Perception;
 import eisbot.proxy.JNIBWAPI;
+import eisbot.proxy.model.Map;
 import eisbot.proxy.model.Unit;
 import eisbot.proxy.types.UnitType.UnitTypes;
 
@@ -143,7 +144,29 @@ public class Strategy {
 		}
 	}
 
+	private void displayMapWalkable() {
+		System.out.println("here....");
+		System.out.println(String.format("wlkable.length %d", bwapi.getMap().walkable.length));
+		System.out.println(String.format("width %d", bwapi.getMap().getWidth()));
+		System.out.println(String.format("height %d", bwapi.getMap().getHeight()));
+		System.out.println(String.format("walk width %d", bwapi.getMap().getWalkWidth()));
+		System.out.println(String.format("walk height %d", bwapi.getMap().getWalkHeight()));
+		System.out.println("here end....");
+
+		
+//		Map map = bwapi.getMap();
+//		int i = 0;
+//		for (boolean walkable : map.walkable) {
+//			i++;
+//			if (walkable){
+//				System.out.print(i + ", ");
+//			}
+//		}
+	}
+	
 	public void apply() {
+//		displayMapWalkable();
+		
 		claimMinerals();
 
 		switch (consumeState) {
@@ -218,13 +241,13 @@ public class Strategy {
 		// Send out a few zerglings to different corners to locate enemy
 		boolean located = false;
 		
-		System.out.println("Sending patrol!!!");
+//		System.out.println("Sending patrol!!!");
 		int[] destCoordinates;
 		destCoordinates = new int[2];
 //		destCoordinates = GiveOrders.instance.sendPatrol(patrolers);
 	//this.establishPatrolers();
 		patrolers = getSomePatrolers();
-		System.out.println(patrolers.size() + " patrolers found");
+//		System.out.println(patrolers.size() + " patrolers found");
 		GiveOrders.instance.sendPatrol(patrolers);
 		patrolOut=true;
 //		//while(!enemyLocated())
@@ -272,7 +295,7 @@ public class Strategy {
 		
 	//	System.out.println("Getting patrollers...");
 		Set<Unit> idleZerglings = Perception.instance.setOfUnitsByType.get(UnitTypes.Zerg_Zergling.ordinal());
-		System.out.println("Total Zerglings used " + idleZerglings.size());
+//		System.out.println("Total Zerglings used " + idleZerglings.size());
 		
 		return idleZerglings;
 	}
