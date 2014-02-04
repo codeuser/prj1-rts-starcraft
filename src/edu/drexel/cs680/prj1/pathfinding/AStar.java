@@ -14,14 +14,14 @@ import eisbot.proxy.JNIBWAPI;
 
 public class AStar implements PathFinding {
 	
-	private Queue<Node> open;
-	private List<Node> closed;
-	private Node goal;
-	private Node start;
+	Queue<Node> open;
+	List<Node> closed;
+	Node goal;
+	Node start;
 	
-	private JNIBWAPI bwapi;
+	JNIBWAPI bwapi;
 	
-	private void init(Node start, Node goal, JNIBWAPI bwapi) {
+	public AStar(Node start, Node goal, JNIBWAPI bwapi) {
 		Comparator<Node> comparator = new Comparator<Node>() {
 			@Override
 			public int compare(Node o1, Node o2) {
@@ -38,46 +38,57 @@ public class AStar implements PathFinding {
 		this.bwapi = bwapi;
 	}
 	
-	public List<Node> calc(Node start, Node goal, JNIBWAPI bwapi) {
-		init(start, goal, bwapi);
+	public List<Node> calc(int ns, int nt) {
 		
-		System.out.println(String.format("Starting AStar, start: %s, goal: %s", start, goal));
+		System.out.println(String.format("A*: Started @%s, goal: %s", start, goal));
 		List<Node> path = null;
-		while (!open.isEmpty()) {
+		int steps = 0;
+		while (!open.isEmpty() && steps++ < ns) {
 //			System.out.println(String.format("open list size: %d", open.size()));
 			Node n = open.remove();
 //			System.out.println(String.format("Removed Node: %s", n));
 			if (n.equals(goal)){
-				System.out.println("Found Goal!");
+				System.out.println("A*: Found Goal!");
 				path = getPath(n);
+				if (!(path.contains(start))){
+					System.out.println(String.format("A* path does not contain start node: %s", start));
+				}
+				if (!(path.contains(goal))){
+					System.out.println(String.format("A* path does not contain goal node: %s", goal));
+				}
 				return path;
 			}
 			closed.add(n);
+//			System.out.println(String.format("Closed Node: %s", n));
 //			System.out.println(String.format("closed list size: %d", closed.size()));
 			List<Node> children = getChildren(n);
 //			children.removeAll(closed);
 //			System.out.println(String.format("found %d children", children.size()));
 			for (Node m : children) {
-				if(!closed.contains(m)) { // added check to determine if node closed
+//				if(!closed.contains(m)) { // added check to determine if node closed
 					m.parent = n;
 					m.g = n.g + 1;
 					m.h = heuristic(m);
 					open.add(m);
-				}
+//					System.out.println(String.format("Opened Node: %s, isclosed?%s", m, closed.contains(m)));
+					
+//				}
 			}
 		}
-		
-		System.out.println("Goal not found!");
+		if (path == null && open.isEmpty()){
+			System.out.println("A*: Goal not found!");
+			throw new IllegalStateException("A*: Goal not found!");
+		}
 		
 		return path;
 	}
 	
-	private int heuristic(Node m) {
+	int heuristic(Node m) {
 		int h = (Math.abs(m.x - goal.x) + Math.abs(m.y - goal.y));
 		return h;
 	}
 	
-	private List<Node> getPath(Node n) {
+	List<Node> getPath(Node n) {
 		List<Node> path = new ArrayList<Node>();
 		
 		while(n.parent!=null){
@@ -88,8 +99,8 @@ public class AStar implements PathFinding {
 		return path;
 	}
 	
-	private enum Direction {up, down, right, left};
-	private Node getNode(Node n,  Direction d) {
+	enum Direction {up, down, right, left};
+	Node getNode(Node n,  Direction d) {
 		Node node = null;
 		
 		for (int i=1; i<2; i++) {
@@ -109,7 +120,7 @@ public class AStar implements PathFinding {
 		return node;
 	}
 	
-	private List<Node> getChildren(Node n) {
+	List<Node> getChildren(Node n) {
 		List<Node> children = new ArrayList<Node>();	
 		
 //		System.out.println("here....");
@@ -121,7 +132,7 @@ public class AStar implements PathFinding {
 	
 		for (Direction d : Direction.values()) {
 			Node node = getNode(n, d);
-			if (node!=null) {
+			if (node!=null && !closed.contains(node) && !open.contains(node)) {
 				children.add(node);
 			}
 		}
@@ -129,7 +140,7 @@ public class AStar implements PathFinding {
 		if(children.size()>0) {
 //			System.out.println(String.format("Node %s has %d children", n, children.size()));
 		} else {
-			System.out.println(String.format("Node %s has NO children", n));
+//			System.out.println(String.format("Node %s has NO children", n));
 		}
 		
 		return children;

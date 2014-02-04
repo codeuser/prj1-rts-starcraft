@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
+import edu.drexel.cs680.prj1.logistics.Logistics;
+import edu.drexel.cs680.prj1.logistics.Logistics.Squadron;
 import edu.drexel.cs680.prj1.pathfinding.PathFindingUtil;
 import eisbot.proxy.JNIBWAPI;
 import eisbot.proxy.model.Unit;
@@ -28,29 +30,33 @@ public class ExecuteOrders {
 	 * unit close to the enemy's centroid 3. Moves player's other units on the
 	 * same path as the centroid unit
 	 */
-	public void moveCloseToEnemy(Set<Unit> allIdleZerglings,
+	public void moveCloseToEnemy(Logistics.Squadron squad,
 			Set<Unit> allEnemyUnits) {
 
 		Unit enemyUnit = getRandomUnit(allEnemyUnits);
-		Unit zerglingUnit = getRandomUnit(allIdleZerglings);
+		Unit zerglingUnit = getRandomUnit(squad.units);
 
 		System.out.println(String.format("Move Zerg Unit# %d at %d:%d",
 				zerglingUnit.getID(), zerglingUnit.getTileX(), zerglingUnit.getTileY()));
 		
 		List<Node> pathToEnemyUnit = null;
-		int count = 0;
+//		int count = 0;
 		
-		while (pathToEnemyUnit == null && count++ < 50) {
+//		while (pathToEnemyUnit == null && count++ < 50) {
+		try {
 			pathToEnemyUnit = PathFindingUtil.instance.findPath(
 					zerglingUnit.getTileX(), zerglingUnit.getTileY(),
-					enemyUnit.getTileX(), enemyUnit.getTileY());
-			
-			enemyUnit = getRandomUnit(allEnemyUnits);
-//			zerglingUnit = getRandomUnit(allIdleZerglings);
+					enemyUnit.getTileX(), enemyUnit.getTileY(), PathFindingUtil.ALGO.LRTASTAR, squad);
+		} catch (IllegalStateException e) {
+			System.out.println("Path wasn't found.");
 		}
+			
+//			enemyUnit = getRandomUnit(allEnemyUnits);
+//			zerglingUnit = getRandomUnit(allIdleZerglings);
+//		}
 
 		if (pathToEnemyUnit == null) {
-			System.out.println("Could not find path!!");
+			System.out.println("path returned by Path Finding Algo is NULL");
 			return;
 		}
 		
@@ -59,48 +65,18 @@ public class ExecuteOrders {
 //		moveAlongPath(zerglingUnit, pathToEnemyUnit);
 //		allIdleZerglings.remove(zerglingUnit);
 		
-		for (Unit zergling : allIdleZerglings) {
+		for (Unit zergling : squad.units) {
 			moveAlongPath(zergling, pathToEnemyUnit);
 		}
 	}
 
-	/*
-	private void moveToLeaderThanPath(Unit zerglingCentroidUnit,
-			List<Node> pathToEnemyCentroidUnit, Set<Unit> allZerglings) {
-		for (Unit zergling : allZerglings) {
-			List<Node> pathToZerglingCentroidUnit = PathFindingUtil.instance
-					.findPath(zergling.getX(), zergling.getY(),
-							zerglingCentroidUnit.getX(),
-							zerglingCentroidUnit.getY());
-			moveAlongPath(zergling, pathToZerglingCentroidUnit);
-			moveAlongPath(zergling, pathToEnemyCentroidUnit);
-		}
-	}
-	*/
-	private void moveToLeaderThanPath(Unit zerglingCentroidUnit,
-			List<Node> pathToEnemyCentroidUnit, Set<Unit> allZerglings) {
-		for (Unit zergling : allZerglings) {
-			List<Node> pathToZerglingCentroidUnit = PathFindingUtil.instance
-					.findPath(zergling.getTileX(), zergling.getTileY(),
-							zerglingCentroidUnit.getTileX(),
-							zerglingCentroidUnit.getTileY());
-			moveAlongPath(zergling, pathToZerglingCentroidUnit);
-			moveAlongPath(zergling, pathToEnemyCentroidUnit);
-		}
-	}
-
-	private void moveAlongPath(Unit zerglings,
+	public void moveAlongPath(Unit zerglings,
 			List<Node> pathToEnemyCentroidUnit) {
 		System.out.println(String.format("Unit# %d has %d steps to take", zerglings.getID(), pathToEnemyCentroidUnit.size()));
 		for (Node moveTo : pathToEnemyCentroidUnit) {			
 			bwapi.move(zerglings.getID(), (int) moveTo.x,
 					(int) moveTo.y);
 		}
-	}
-
-	private Unit getCentroidUnit(Set<Unit> allUnits) {
-		// TODO implement a proper centroid unit
-		return allUnits.toArray(new Unit[0])[allUnits.size() / 2];
 	}
 
 	private Unit getRandomUnit(Set<Unit> allUnits) {
@@ -122,5 +98,11 @@ public class ExecuteOrders {
 	public void patrolTile(int unitID,int tileX,int tileY)
 	{
 		bwapi.patrol(unitID, tileX, tileY);
+	}
+
+	public void moveSquad(Squadron squad, Node loc) {
+		for (Unit n : squad.units) {			
+			bwapi.move(n.getID(), loc.x, loc.y);
+		}		
 	}
 }
